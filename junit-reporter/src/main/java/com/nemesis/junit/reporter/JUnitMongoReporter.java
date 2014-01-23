@@ -30,8 +30,7 @@ public class JUnitMongoReporter extends RunListener {
 			if (description != null) {
 				displayName = description.getChildren().get(0).getDisplayName();
 			} else {
-				displayName = "Suite-"
-						+ Calendar.getInstance().get(Calendar.MILLISECOND);
+				displayName = "Default Suite";
 			}
 
 			SuiteData suiteData = new SuiteData();
