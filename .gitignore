@@ -5,3 +5,7 @@ testng-reporter/.settings/
 testng-reporter/.classpath
 testng-reporter/.project
 testng-reporter/test-output/
+junit-reporter/.classpath
+junit-reporter/.gitignore
+junit-reporter/.project
+junit-reporter/.settings/
