@@ -4,7 +4,7 @@ import org.testng.Assert;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
-@Listeners(value = { com.nemesis.testng.reporter.TestNGMongoReporter.class })
+@Listeners(value = { com.nemesis.testng.reporters.TestNGMongoReporter.class })
 public class TestDemo {
 
 	@Test(invocationCount = 23)

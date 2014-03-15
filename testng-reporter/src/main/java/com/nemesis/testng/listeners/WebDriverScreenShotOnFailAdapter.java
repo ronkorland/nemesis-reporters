@@ -1,4 +1,4 @@
-package com.nemesis.testng.reporter;
+package com.nemesis.testng.listeners;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +10,8 @@ import org.openqa.selenium.WebDriver;
 import org.testng.ITestResult;
 import org.testng.Reporter;
 import org.testng.TestListenerAdapter;
+
+import com.nemesis.testng.WebDriverMap;
 
 public class WebDriverScreenShotOnFailAdapter extends TestListenerAdapter {
 

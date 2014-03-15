@@ -3,7 +3,7 @@ package com.nemesis.testng.tests;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.nemesis.testng.reporter.BaseTest;
+import com.nemesis.testng.BaseTest;
 
 public class WebDriverTestDemo extends BaseTest {
 

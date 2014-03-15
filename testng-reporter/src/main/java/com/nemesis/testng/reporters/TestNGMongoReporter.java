@@ -1,4 +1,4 @@
-package com.nemesis.testng.reporter;
+package com.nemesis.testng.reporters;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 import org.joda.time.LocalDateTime;
@@ -32,6 +33,8 @@ import com.nemesis.reporter.data.SuiteData;
 import com.nemesis.reporter.data.TestAttachmentData;
 import com.nemesis.reporter.data.TestData;
 import com.nemesis.reporter.data.TestParameterData;
+import com.nemesis.testng.BaseTest;
+import com.nemesis.testng.dataproviders.CsvData;
 
 public class TestNGMongoReporter implements IReporter, ISuiteListener {
 
@@ -63,14 +66,13 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 						}
 					}
 				}
-				
+
 				if (attachments != null && attachments.size() > 0) {
 					for (TestAttachmentData attachment : attachments) {
 						restClient.uploadTestAttach(attachment.getTestId(),
 								attachment.getFile());
 					}
 				}
-
 
 				FileUtils.write(new File(outputDirectory + File.separator
 						+ XML_NAME), "");
@@ -99,6 +101,24 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 			parameterPassword.setParamSource("BaseTest");
 			testParameter.add(parameterPassword);
 		}
+		Object[] parameters = testResult.getParameters();
+		for (int i = 0; i < parameters.length; i++) {
+			if (parameters[i] instanceof CsvData) {
+				CsvData csvData = (CsvData) parameters[i];
+				if (csvData != null && csvData.getMap() != null
+						&& csvData.getMap().size() > 0) {
+					TreeMap<String, String> map = csvData.getMap();
+					for (Entry<String, String> entry : map.entrySet()) {
+						TestParameterData parameter = new TestParameterData();
+						parameter.setParamName(entry.getKey());
+						parameter.setParamValue(entry.getValue());
+						parameter.setParamSource("Csv");
+						testParameter.add(parameter);
+					}
+				}
+			}
+		}
+
 		return testParameter;
 	}
 

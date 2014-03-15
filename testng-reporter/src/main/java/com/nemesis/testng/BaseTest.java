@@ -1,4 +1,4 @@
-package com.nemesis.testng.reporter;
+package com.nemesis.testng;
 
 import java.lang.reflect.Method;
 
@@ -11,8 +11,8 @@ import org.testng.annotations.Optional;
 import org.testng.annotations.Parameters;
 
 @Listeners(value = {
-		com.nemesis.testng.reporter.WebDriverScreenShotOnFailAdapter.class,
-		com.nemesis.testng.reporter.TestNGMongoReporter.class })
+		com.nemesis.testng.listeners.WebDriverScreenShotOnFailAdapter.class,
+		com.nemesis.testng.reporters.TestNGMongoReporter.class })
 public class BaseTest {
 
 	private String userName;

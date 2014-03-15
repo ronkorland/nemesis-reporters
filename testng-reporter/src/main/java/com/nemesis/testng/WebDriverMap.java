@@ -1,4 +1,4 @@
-package com.nemesis.testng.reporter;
+package com.nemesis.testng;
 
 import org.openqa.selenium.WebDriver;
 
