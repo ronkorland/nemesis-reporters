@@ -1,7 +1,5 @@
 package com.nemesis.junit.reporter;
 
-import java.util.Calendar;
-
 import org.joda.time.LocalDateTime;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
