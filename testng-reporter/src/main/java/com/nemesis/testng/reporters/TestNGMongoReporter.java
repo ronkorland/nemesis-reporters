@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 import org.joda.time.LocalDateTime;
@@ -28,13 +27,12 @@ import org.testng.xml.XmlSuite;
 import com.nemesis.reporter.MongoDbRestClient;
 import com.nemesis.reporter.MongoDbRestClientImpl;
 import com.nemesis.reporter.data.FailureReasonData;
+import com.nemesis.reporter.data.IDataProvider;
 import com.nemesis.reporter.data.Status;
 import com.nemesis.reporter.data.SuiteData;
 import com.nemesis.reporter.data.TestAttachmentData;
 import com.nemesis.reporter.data.TestData;
 import com.nemesis.reporter.data.TestParameterData;
-import com.nemesis.testng.BaseTest;
-import com.nemesis.testng.dataproviders.CsvData;
 
 public class TestNGMongoReporter implements IReporter, ISuiteListener {
 
@@ -45,20 +43,18 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 	private List<TestAttachmentData> attachments = null;
 
 	@Override
-	public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites,
-			String outputDirectory) {
+	public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
 		attachments = new ArrayList<TestAttachmentData>();
 		try {
-			if (!FileUtils.directoryContains(new File(outputDirectory),
-					new File(outputDirectory + File.separator + XML_NAME))) {
+			if (!FileUtils.directoryContains(new File(outputDirectory), new File(outputDirectory + File.separator
+					+ XML_NAME))) {
 				restClient = new MongoDbRestClientImpl();
 				if (suites != null && suites.size() > 0) {
 					for (ISuite iSuite : suites) {
 						SuiteData suiteData = buildSuite(iSuite);
 						suiteData = restClient.createSuite(suiteData);
 
-						List<TestData> testDatas = buildTests(
-								suiteData.getId(), iSuite);
+						List<TestData> testDatas = buildTests(suiteData.getId(), iSuite);
 						if (testDatas != null && testDatas.size() > 0) {
 							for (TestData testData : testDatas) {
 								restClient.createTest(testData);
@@ -69,13 +65,11 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 
 				if (attachments != null && attachments.size() > 0) {
 					for (TestAttachmentData attachment : attachments) {
-						restClient.uploadTestAttach(attachment.getTestId(),
-								attachment.getFile());
+						restClient.uploadTestAttach(attachment.getTestId(), attachment.getFile());
 					}
 				}
 
-				FileUtils.write(new File(outputDirectory + File.separator
-						+ XML_NAME), "");
+				FileUtils.write(new File(outputDirectory + File.separator + XML_NAME), "");
 
 			}
 		} catch (IOException e) {
@@ -86,33 +80,17 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 	private List<TestParameterData> buildTestParameters(ITestResult testResult) {
 		List<TestParameterData> testParameter = new ArrayList<TestParameterData>();
 
-		if (testResult.getInstance() instanceof BaseTest) {
-			BaseTest baseTest = (BaseTest) testResult.getInstance();
-
-			TestParameterData parameterUser = new TestParameterData();
-			parameterUser.setParamName("UserName");
-			parameterUser.setParamValue(baseTest.getUserName());
-			parameterUser.setParamSource("BaseTest");
-			testParameter.add(parameterUser);
-
-			TestParameterData parameterPassword = new TestParameterData();
-			parameterPassword.setParamName("Password");
-			parameterPassword.setParamValue(baseTest.getPassword());
-			parameterPassword.setParamSource("BaseTest");
-			testParameter.add(parameterPassword);
-		}
 		Object[] parameters = testResult.getParameters();
 		for (int i = 0; i < parameters.length; i++) {
-			if (parameters[i] instanceof CsvData) {
-				CsvData csvData = (CsvData) parameters[i];
-				if (csvData != null && csvData.getMap() != null
-						&& csvData.getMap().size() > 0) {
-					TreeMap<String, String> map = csvData.getMap();
+			if (parameters[i] instanceof IDataProvider) {
+				IDataProvider a = (IDataProvider) parameters[i];
+				Map<String, String> map = a.getMap();
+				if (map != null && map.size() > 0) {
 					for (Entry<String, String> entry : map.entrySet()) {
 						TestParameterData parameter = new TestParameterData();
 						parameter.setParamName(entry.getKey());
 						parameter.setParamValue(entry.getValue());
-						parameter.setParamSource("Csv");
+						parameter.setParamSource("");
 						testParameter.add(parameter);
 					}
 				}
@@ -130,8 +108,7 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 					String[] fileString = output.split("@");
 					System.out.println(fileString);
 					File file = new File(fileString[1].trim());
-					TestAttachmentData attach = new TestAttachmentData(testId,
-							file);
+					TestAttachmentData attach = new TestAttachmentData(testId, file);
 					attachments.add(attach);
 				}
 			}
@@ -146,28 +123,24 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 			addAllTestResults(testResults, testContext.getPassedTests());
 			addAllTestResults(testResults, testContext.getFailedTests());
 			addAllTestResults(testResults, testContext.getSkippedTests());
-			addAllTestResults(testResults,
-					testContext.getFailedButWithinSuccessPercentageTests());
+			addAllTestResults(testResults, testContext.getFailedButWithinSuccessPercentageTests());
 		}
 		return testResults;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void addAllTestResults(Set<ITestResult> testResults,
-			IResultMap resultMap) {
+	private void addAllTestResults(Set<ITestResult> testResults, IResultMap resultMap) {
 		if (resultMap != null) {
 			// Sort the results chronologically before adding them
 			List<ITestResult> allResults = new ArrayList<ITestResult>();
 			allResults.addAll(resultMap.getAllResults());
 
-			Collections.sort(new ArrayList(allResults),
-					new Comparator<ITestResult>() {
-						@Override
-						public int compare(ITestResult o1, ITestResult o2) {
-							return (int) (o1.getStartMillis() - o2
-									.getStartMillis());
-						}
-					});
+			Collections.sort(new ArrayList(allResults), new Comparator<ITestResult>() {
+				@Override
+				public int compare(ITestResult o1, ITestResult o2) {
+					return (int) (o1.getStartMillis() - o2.getStartMillis());
+				}
+			});
 
 			testResults.addAll(allResults);
 		}
@@ -181,23 +154,48 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 			TestData test = new TestData();
 			test.setSuiteId(suiteId);
 			test.setClassName(testResult.getInstanceName());
-			test.setMethod(testResult.getName());
+			test.setMethod(getMethodName(testResult));
 			test.setTestName(testResult.getTestContext().getName());
 			test.setEndTime(new LocalDateTime(testResult.getEndMillis()));
 			test.setStartTime(new LocalDateTime(testResult.getStartMillis()));
 			test.setTestStatus(Status.fromInt(testResult.getStatus()));
-			test.setTestGroups(Arrays
-					.asList(testResult.getMethod().getGroups()));
+			test.setTestGroups(Arrays.asList(testResult.getMethod().getGroups()));
 			test.setParameters(buildTestParameters(testResult));
 			if (testResult.getThrowable() != null) {
-				test.setFailureReason(FailureReasonData
-						.buildFailureReason(testResult.getThrowable()));
+				test.setFailureReason(FailureReasonData.buildFailureReason(testResult.getThrowable()));
 			}
 			addAttach(test.getId(), testResult);
 
 			tests.add(test);
 		}
 		return tests;
+	}
+
+	protected String getMethodName(ITestResult tr) {
+		StringBuffer stringBuffer = new StringBuffer();
+		String name = tr.getName();
+		stringBuffer.append(name);
+
+		Object[] parameters = tr.getParameters();
+		if (parameters != null && parameters.length > 0) {
+			stringBuffer.append("(");
+			for (int i = 0; i < parameters.length; i++) {
+				String string = "";
+				if (parameters[i] instanceof IDataProvider) {
+					IDataProvider a = (IDataProvider) parameters[i];
+					string = a.getDisplayName();
+				} else {
+					string = parameters[i].toString();
+				}
+
+				stringBuffer.append(string);
+				if (i != parameters.length - 1) {
+					stringBuffer.append(",");
+				}
+			}
+			stringBuffer.append(")");
+		}
+		return stringBuffer.toString();
 	}
 
 	private SuiteData buildSuite(ISuite suite) {
@@ -208,8 +206,7 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 
 		for (Map.Entry<String, ISuiteResult> result : results.entrySet()) {
 			ITestContext testContext = result.getValue().getTestContext();
-			LocalDateTime startDate = new LocalDateTime(
-					testContext.getStartDate());
+			LocalDateTime startDate = new LocalDateTime(testContext.getStartDate());
 			LocalDateTime endDate = new LocalDateTime(testContext.getEndDate());
 			if (minStartDate.isAfter(startDate)) {
 				minStartDate = startDate;
@@ -234,8 +231,7 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 	@Override
 	public void onStart(ISuite suite) {
 		File directory = new File(suite.getOutputDirectory());
-		FileUtils.deleteQuietly(new File(directory.getParent() + File.separator
-				+ XML_NAME));
+		FileUtils.deleteQuietly(new File(directory.getParent() + File.separator + XML_NAME));
 
 	}
 
