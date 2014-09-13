@@ -8,7 +8,7 @@ public enum ApiUrl {
 
 	BASE_URL("base.url"), SUITE_RESOURCE("suite.resource"), TEST_RESOURCE(
 			"test.resource"), TEST_ATTACHMENT_RESOURCE(
-			"test.attachment.resource");
+			"test.attachment.resource"), LOGIN_RESOURCE("login.resource");
 
 	private String propName;
 

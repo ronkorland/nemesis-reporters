@@ -7,13 +7,15 @@ import com.nemesis.reporter.data.TestData;
 
 public interface MongoDbRestClient {
 
-	public SuiteData createSuite(SuiteData suite);
+	public SuiteData createSuite(SuiteData suite, String token);
 
-	public SuiteData updateSuite(SuiteData suite);
+	public SuiteData updateSuite(SuiteData suite, String token);
 
-	public TestData createTest(TestData test);
+	public TestData createTest(TestData test, String token);
 
-	public TestData updateTest(TestData test);
+	public TestData updateTest(TestData test, String token);
 
-	public String uploadTestAttach(String testId, File file);
+	public String uploadTestAttach(String testId, File file, String token);
+
+	public String getToken();
 }

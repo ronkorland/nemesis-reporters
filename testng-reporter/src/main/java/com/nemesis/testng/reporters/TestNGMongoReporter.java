@@ -49,15 +49,16 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 			if (!FileUtils.directoryContains(new File(outputDirectory), new File(outputDirectory + File.separator
 					+ XML_NAME))) {
 				restClient = new MongoDbRestClientImpl();
+				String token = restClient.getToken();
 				if (suites != null && suites.size() > 0) {
 					for (ISuite iSuite : suites) {
 						SuiteData suiteData = buildSuite(iSuite);
-						suiteData = restClient.createSuite(suiteData);
+						suiteData = restClient.createSuite(suiteData, token);
 
 						List<TestData> testDatas = buildTests(suiteData.getId(), iSuite);
 						if (testDatas != null && testDatas.size() > 0) {
 							for (TestData testData : testDatas) {
-								restClient.createTest(testData);
+								restClient.createTest(testData, token);
 							}
 						}
 					}
@@ -65,7 +66,7 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 
 				if (attachments != null && attachments.size() > 0) {
 					for (TestAttachmentData attachment : attachments) {
-						restClient.uploadTestAttach(attachment.getTestId(), attachment.getFile());
+						restClient.uploadTestAttach(attachment.getTestId(), attachment.getFile(), token);
 					}
 				}
 
@@ -77,6 +78,18 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 		}
 	}
 
+	private TestParameterData paramMapToTestParam(Map<String, String> map) {
+		TestParameterData parameter = new TestParameterData();
+		if (map != null && map.size() > 0) {
+			for (Entry<String, String> entry : map.entrySet()) {
+				parameter.setParamName(entry.getKey());
+				parameter.setParamValue(entry.getValue());
+				parameter.setParamSource("");
+			}
+		}
+		return parameter;
+	}
+
 	private List<TestParameterData> buildTestParameters(ITestResult testResult) {
 		List<TestParameterData> testParameter = new ArrayList<TestParameterData>();
 
@@ -85,13 +98,19 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 			if (parameters[i] instanceof IDataProvider) {
 				IDataProvider a = (IDataProvider) parameters[i];
 				Map<String, String> map = a.getMap();
-				if (map != null && map.size() > 0) {
-					for (Entry<String, String> entry : map.entrySet()) {
-						TestParameterData parameter = new TestParameterData();
-						parameter.setParamName(entry.getKey());
-						parameter.setParamValue(entry.getValue());
-						parameter.setParamSource("");
-						testParameter.add(parameter);
+				TestParameterData parameter = paramMapToTestParam(map);
+				testParameter.add(parameter);
+			}
+			if (parameters[i] instanceof List) {
+				List list = (List) parameters[i];
+				if (list.size() > 0) {
+					for (Object o : list) {
+						if (o instanceof IDataProvider) {
+							IDataProvider a = (IDataProvider) o;
+							Map<String, String> map = a.getMap();
+							TestParameterData parameter = paramMapToTestParam(map);
+							testParameter.add(parameter);
+						}
 					}
 				}
 			}
@@ -184,6 +203,20 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 				if (parameters[i] instanceof IDataProvider) {
 					IDataProvider a = (IDataProvider) parameters[i];
 					string = a.getDisplayName();
+				} else if (parameters[i] instanceof List) {
+					List list = (List) parameters[i];
+					string = "[";
+					for (int j = 0; j < list.size(); j++) {
+						if (list.get(j) instanceof IDataProvider) {
+							IDataProvider a = (IDataProvider) list.get(j);
+							String displayName = a.getDisplayName();
+							string = string + displayName;
+						}
+						if (j != list.size() - 1) {
+							string = string + ",";
+						}
+					}
+					string = string + "]";
 				} else {
 					string = parameters[i].toString();
 				}

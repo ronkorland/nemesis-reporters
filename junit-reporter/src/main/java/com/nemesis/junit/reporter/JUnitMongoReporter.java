@@ -19,9 +19,11 @@ public class JUnitMongoReporter extends RunListener {
 	private SuiteData currentSuite = null;
 	private TestData currentTest = null;
 	private MongoDbRestClient restClient = new MongoDbRestClientImpl();
+	private String token = null;
 
 	@Override
 	public void testRunStarted(Description description) throws Exception {
+		token = restClient.getToken();
 		System.out.println("testRunStarted");
 		if (currentSuite == null) {
 			String displayName = null;
@@ -38,7 +40,7 @@ public class JUnitMongoReporter extends RunListener {
 			displayName = displayNameArry[displayNameArry.length - 1];
 
 			suiteData.setSuiteName(displayName);
-			currentSuite = restClient.createSuite(suiteData);
+			currentSuite = restClient.createSuite(suiteData, token);
 		}
 	}
 
@@ -47,7 +49,7 @@ public class JUnitMongoReporter extends RunListener {
 		System.out.println("testRunFinished");
 		if (currentSuite != null) {
 			currentSuite.setEndTime(LocalDateTime.now());
-			restClient.updateSuite(currentSuite);
+			restClient.updateSuite(currentSuite, token);
 		}
 
 		currentSuite = null;
@@ -70,8 +72,7 @@ public class JUnitMongoReporter extends RunListener {
 	@Override
 	public void testFailure(Failure failure) throws Exception {
 		if (currentTest != null) {
-			FailureReasonData failureReason = FailureReasonData
-					.buildFailureReason(failure.getException());
+			FailureReasonData failureReason = FailureReasonData.buildFailureReason(failure.getException());
 			currentTest.setFailureReason(failureReason);
 			currentTest.setTestStatus(Status.FAILURE);
 		}
@@ -80,7 +81,7 @@ public class JUnitMongoReporter extends RunListener {
 	@Override
 	public void testFinished(Description description) throws Exception {
 		currentTest.setEndTime(LocalDateTime.now());
-		restClient.createTest(currentTest);
+		restClient.createTest(currentTest, token);
 		currentTest = null;
 	}
 }
