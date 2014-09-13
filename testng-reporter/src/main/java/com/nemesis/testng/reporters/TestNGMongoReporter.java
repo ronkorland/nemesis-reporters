@@ -2,8 +2,10 @@ package com.nemesis.testng.reporters;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -19,8 +21,10 @@ import org.testng.ISuite;
 import org.testng.ISuiteListener;
 import org.testng.ISuiteResult;
 import org.testng.ITestContext;
+import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
 import org.testng.Reporter;
+import org.testng.annotations.Parameters;
 import org.testng.collections.Sets;
 import org.testng.xml.XmlSuite;
 
@@ -78,28 +82,57 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 		}
 	}
 
-	private TestParameterData paramMapToTestParam(Map<String, String> map) {
-		TestParameterData parameter = new TestParameterData();
+	private List<TestParameterData> paramMapToTestParam(Map<String, String> map) {
+		List<TestParameterData> datas = new ArrayList<TestParameterData>();
 		if (map != null && map.size() > 0) {
 			for (Entry<String, String> entry : map.entrySet()) {
+				TestParameterData parameter = new TestParameterData();
 				parameter.setParamName(entry.getKey());
 				parameter.setParamValue(entry.getValue());
 				parameter.setParamSource("");
+				datas.add(parameter);
 			}
 		}
-		return parameter;
+		return datas;
+	}
+
+	private List<TestParameterData> buildBeforeParameters(ITestResult testResult) {
+		ISuite currentXmlTest = testResult.getTestContext().getSuite();
+		List<TestParameterData> testParameters = new ArrayList<TestParameterData>();
+		IResultMap passedConfigurations = testResult.getTestContext().getPassedConfigurations();
+		Collection<ITestNGMethod> allMethods = passedConfigurations.getAllMethods();
+		for (ITestNGMethod iTestNGMethod : allMethods) {
+			Method method = iTestNGMethod.getConstructorOrMethod().getMethod();
+			Parameters annotation = method.getAnnotation(Parameters.class);
+			if (annotation != null) {
+				String[] value = annotation.value();
+				for (String v : value) {
+					String parameter = currentXmlTest.getParameter(v);
+					TestParameterData p = new TestParameterData();
+					p.setParamName(v);
+					p.setParamValue(parameter);
+					p.setParamSource("");
+					testParameters.add(p);
+				}
+			}
+		}
+
+		return testParameters;
 	}
 
 	private List<TestParameterData> buildTestParameters(ITestResult testResult) {
 		List<TestParameterData> testParameter = new ArrayList<TestParameterData>();
+		List<TestParameterData> beforeParameters = buildBeforeParameters(testResult);
+
+		testParameter.addAll(beforeParameters);
 
 		Object[] parameters = testResult.getParameters();
 		for (int i = 0; i < parameters.length; i++) {
 			if (parameters[i] instanceof IDataProvider) {
 				IDataProvider a = (IDataProvider) parameters[i];
 				Map<String, String> map = a.getMap();
-				TestParameterData parameter = paramMapToTestParam(map);
-				testParameter.add(parameter);
+				List<TestParameterData> parametersMap = paramMapToTestParam(map);
+				testParameter.addAll(parametersMap);
 			}
 			if (parameters[i] instanceof List) {
 				List list = (List) parameters[i];
@@ -108,8 +141,8 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 						if (o instanceof IDataProvider) {
 							IDataProvider a = (IDataProvider) o;
 							Map<String, String> map = a.getMap();
-							TestParameterData parameter = paramMapToTestParam(map);
-							testParameter.add(parameter);
+							List<TestParameterData> parametersMap = paramMapToTestParam(map);
+							testParameter.addAll(parametersMap);
 						}
 					}
 				}
