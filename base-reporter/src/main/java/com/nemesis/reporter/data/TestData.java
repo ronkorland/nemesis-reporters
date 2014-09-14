@@ -31,6 +31,8 @@ public class TestData extends BaseData {
 
 	private List<String> testAttachments;
 
+	private List<String> logs;
+
 	private FailureReasonData failureReason;
 
 	private String runningTime;
@@ -141,5 +143,13 @@ public class TestData extends BaseData {
 
 	public void setSuiteId(String suiteId) {
 		this.suiteId = suiteId;
+	}
+
+	public List<String> getLogs() {
+		return logs;
+	}
+
+	public void setLogs(List<String> logs) {
+		this.logs = logs;
 	}
 }

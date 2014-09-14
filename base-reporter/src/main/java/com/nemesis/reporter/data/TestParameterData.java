@@ -1,5 +1,7 @@
 package com.nemesis.reporter.data;
 
+import java.util.List;
+
 public class TestParameterData {
 
 	private String paramName;
@@ -34,5 +36,22 @@ public class TestParameterData {
 
 	public String getParamName() {
 		return paramName;
+	}
+
+	public static boolean paramExists(List<TestParameterData> l, String paramName) {
+		if (l != null) {
+			for (TestParameterData t : l) {
+				if (t.getParamName().equalsIgnoreCase(paramName)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public String toString() {
+		return "TestParameterData [paramName=" + paramName + ", paramValue=" + paramValue + ", paramSource="
+				+ paramSource + "]";
 	}
 }

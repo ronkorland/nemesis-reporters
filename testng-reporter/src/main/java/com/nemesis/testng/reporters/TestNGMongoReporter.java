@@ -96,35 +96,33 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 		return datas;
 	}
 
-	private List<TestParameterData> buildBeforeParameters(ITestResult testResult) {
+	private void buildBeforeParameters(List<TestParameterData> testParameters, ITestResult testResult) {
 		ISuite currentXmlTest = testResult.getTestContext().getSuite();
-		List<TestParameterData> testParameters = new ArrayList<TestParameterData>();
 		IResultMap passedConfigurations = testResult.getTestContext().getPassedConfigurations();
 		Collection<ITestNGMethod> allMethods = passedConfigurations.getAllMethods();
 		for (ITestNGMethod iTestNGMethod : allMethods) {
 			Method method = iTestNGMethod.getConstructorOrMethod().getMethod();
 			Parameters annotation = method.getAnnotation(Parameters.class);
 			if (annotation != null) {
-				String[] value = annotation.value();
-				for (String v : value) {
-					String parameter = currentXmlTest.getParameter(v);
-					TestParameterData p = new TestParameterData();
-					p.setParamName(v);
-					p.setParamValue(parameter);
-					p.setParamSource("");
-					testParameters.add(p);
+				String[] parameters = annotation.value();
+				for (String p : parameters) {
+					if (TestParameterData.paramExists(testParameters, p)) {
+						continue;
+					}
+					String value = currentXmlTest.getParameter(p);
+					TestParameterData parameter = new TestParameterData();
+					parameter.setParamName(p);
+					parameter.setParamValue(value);
+					parameter.setParamSource("");
+					testParameters.add(parameter);
 				}
 			}
 		}
-
-		return testParameters;
 	}
 
 	private List<TestParameterData> buildTestParameters(ITestResult testResult) {
 		List<TestParameterData> testParameter = new ArrayList<TestParameterData>();
-		List<TestParameterData> beforeParameters = buildBeforeParameters(testResult);
-
-		testParameter.addAll(beforeParameters);
+		buildBeforeParameters(testParameter, testResult);
 
 		Object[] parameters = testResult.getParameters();
 		for (int i = 0; i < parameters.length; i++) {
@@ -213,6 +211,7 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 			test.setTestStatus(Status.fromInt(testResult.getStatus()));
 			test.setTestGroups(Arrays.asList(testResult.getMethod().getGroups()));
 			test.setParameters(buildTestParameters(testResult));
+			test.setLogs(buildTestLogs(testResult));
 			if (testResult.getThrowable() != null) {
 				test.setFailureReason(FailureReasonData.buildFailureReason(testResult.getThrowable()));
 			}
@@ -221,6 +220,11 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 			tests.add(test);
 		}
 		return tests;
+	}
+
+	private List<String> buildTestLogs(ITestResult tr) {
+		List<String> output = Reporter.getOutput(tr);
+		return output;
 	}
 
 	protected String getMethodName(ITestResult tr) {
