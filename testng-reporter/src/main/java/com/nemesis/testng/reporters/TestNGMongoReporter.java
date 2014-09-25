@@ -301,6 +301,10 @@ public class TestNGMongoReporter implements IReporter, ISuiteListener {
 	@Override
 	public void onStart(ISuite suite) {
 		File directory = new File(suite.getOutputDirectory());
+		if (!directory.exists()) {
+			directory.mkdirs();
+		}
+
 		FileUtils.deleteQuietly(new File(directory.getParent() + File.separator + XML_NAME));
 
 	}
