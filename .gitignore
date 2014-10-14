@@ -9,3 +9,4 @@ junit-reporter/.classpath
 junit-reporter/.gitignore
 junit-reporter/.project
 junit-reporter/.settings/
+.settings
